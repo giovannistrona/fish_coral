@@ -40,7 +40,9 @@ b<-cbind(b,a$Oblig.Fac.Linked_proportion)
 b<-cbind(b,a$Region)
 b<-cbind(b,a$lon)
 b<-cbind(b,a$lat)
-colnames(b)<-c('fish',
+
+
+cnames<-c('fish',
                'coral',
                'fr30m',
                'isolation',
@@ -62,6 +64,23 @@ colnames(b)<-c('fish',
                'lat'
 )
 
+colnames(b)<-cnames
+b<-cbind(b,b$tmean**2)
+b<-cbind(b,b$trange**2)
+b<-cbind(b,b$sal**2)
+b<-cbind(b,b$pp**2)
+b<-cbind(b,b$ph**2)
+
+colnames(b)<-c(cnames,'tmean_2','trange_2','sal_2','pp_2','ph_2')
+###all models
+model0_sq <- '
+        fish ~ coral+ abs_lat + tmean_2 + trange_2 + isolation 
+          + sal_2 + pp_2 + reef_fraction  
+          + reg1 + reg2 + reg3 + reg4
+        coral ~ abs_lat + tmean_2 + trange_2 
+          + isolation + sal_2 + pp_2 + reef_fraction 
+          + fr30m + reg1 + reg2 + reg3 + reg4
+  '
 
 model0 <- '
         fish ~ coral+ abs_lat + tmean + trange + isolation 
@@ -72,11 +91,13 @@ model0 <- '
           + fr30m + reg1 + reg2 + reg3 + reg4
   '
 
+fit0_sq <- sem(model0_sq, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
 
 fit0 <- sem(model0, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE,
             estimator = "ML")
-
 
 model1 <- '
       fish ~ coral+ abs_lat + isolation + sal + pp 
@@ -85,9 +106,19 @@ model1 <- '
       + pp + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
 '
 
+model1_sq <- '
+      fish ~ coral+ abs_lat + isolation + sal_2 + pp_2 
+      + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
+      coral ~ abs_lat + tmean_2 + trange + isolation + sal_2 
+      + pp_2 + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
+'
+
+
 fit1 <- sem(model1, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE)#, test = "bollen.stine")
 
+fit1_sq <- sem(model1_sq, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE)#, test = "bollen.stine")
 
 # fish-coral-environmental path analysis remove tmean and fr30m from fish
 model2 <- '
@@ -96,10 +127,21 @@ model2 <- '
       coral ~ abs_lat + tmean + trange + isolation 
       + sal + pp + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
 '
+
+model2_sq <- '
+      fish ~ coral + abs_lat +  isolation + sal_2 
+      + pp_2 + reef_fraction + reg1 + reg2 + reg3 + reg4
+      coral ~ abs_lat + tmean_2 + trange_2 + isolation 
+      + sal_2 + pp_2 + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
+'
+
 fit2 <- sem(model2, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE,
             estimator = "ML")
 
+fit2_sq <- sem(model2_sq, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
 
 # SEM with environmental latent variable driven by latitude
 model3 <- '
@@ -114,7 +156,25 @@ model3 <- '
   coral ~~ reef_fraction
   '
 
+model3_sq <- '
+  fish ~ isolation + environment + coral + reef_fraction + reg1 + reg2 + reg3 + reg4 
+  coral ~ isolation + environment + reef_fraction + reg1 + reg2 + reg3 + reg4
+  environment =~ tmean_2 + trange_2 + sal_2 + pp_2
+  reef_fraction ~ environment + fr30m
+  environment ~ abs_lat
+  trange_2 ~~ pp_2
+  tmean_2 ~~ pp_2
+  tmean_2 ~~ trange_2
+  coral ~~ reef_fraction
+  '
+
+
 fit3 <- sem(model3, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
+
+
+fit3_sq <- sem(model3_sq, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE,
             estimator = "ML")
 
@@ -132,9 +192,29 @@ model4 <- '
   trange ~~ sal
   sal ~~ pp
   '
+
+model4_sq <- '
+  fish ~ isolation + environment + coral_reef + reg1 + reg2 + reg3 + reg4
+  coral ~ isolation + environment + reef_fraction + reg1 + reg2 + reg3 + reg4
+  environment =~ tmean_2 + trange_2 + sal_2 + pp
+  coral_reef =~ coral + reef_fraction
+  reef_fraction ~ environment + fr30m
+  environment ~ abs_lat
+  trange_2 ~~ pp_2
+  tmean_2 ~~ pp_2
+  tmean_2 ~~ trange_2
+  trange_2 ~~ sal_2
+  sal_2 ~~ pp_2
+  '
+
 fit4 <- sem(model4, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE,
             estimator = "ML")
+
+fit4_sq <- sem(model4_sq, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
+
 
 #model with no latent variables
 model5 <- '
@@ -143,7 +223,17 @@ model5 <- '
     fish ~  reef_fraction + coral + tmean + sal + pp + reg1 + reg2 + reg3 + reg4
 '
 
+model5_sq <- '
+    coral ~ tmean_2 + sal_2 + pp_2 + fr30m + reg1 + reg2 + reg3 + reg4
+    reef_fraction ~ fr30m + coral + tmean_2 + sal_2 + reg1 + reg2 + reg3 + reg4
+    fish ~  reef_fraction + coral + tmean_2 + sal_2 + pp_2 + reg1 + reg2 + reg3 + reg4
+'
+
 fit5 <- sem(model5, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
+
+fit5_sq <- sem(model5_sq, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE,
             estimator = "ML")
 
@@ -153,8 +243,17 @@ model6 <- '
     reef_fraction ~ fr30m + coral + tmean + sal
     fish ~  reef_fraction + coral + tmean + sal + pp
 '
+model6_sq <- '
+    coral ~ tmean_2 + sal_2 + pp_2 + fr30m
+    reef_fraction ~ fr30m + coral + tmean_2 + sal_2
+    fish ~  reef_fraction + coral + tmean_2 + sal_2 + pp_2
+'
 
 fit6 <- sem(model6, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
+
+fit6_sq <- sem(model6_sq, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE,
             estimator = "ML")
 
@@ -163,8 +262,16 @@ model7 <- '
     coral ~ tmean + sal + pp + fr30m
     fish ~  coral + tmean + sal + pp
 '
+model7_sq <- '
+    coral ~ tmean_2 + sal_2 + pp_2 + fr30m
+    fish ~  coral + tmean_2 + sal_2 + pp_2
+'
 
 fit7 <- sem(model7, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
+
+fit7_sq <- sem(model7_sq, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE,
             estimator = "ML")
 
@@ -175,10 +282,19 @@ model8 <- '
      
       coral ~~ reef_fraction
   '
+model8_sq <- '
+      coral ~ isolation + tmean_2 + trange_2 + sal_2 + pp_2 + fr30m + reg1 + reg2 + reg3 + reg4
+      reef_fraction ~ isolation + fr30m + coral + tmean_2 + trange_2 + sal_2 + reg1 + reg2 + reg3 + reg4
+      fish ~  isolation + reef_fraction + coral + tmean_2 + trange_2 + sal_2 + pp_2 + reg1 + reg2 + reg3 + reg4
+     
+      coral ~~ reef_fraction
+  '
 
 fit8 <- sem(model8, fixed.x=F, 
             data=b,check.gradient=F,meanstructure = TRUE)
 
+fit8_sq <- sem(model8_sq, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE)
 
 model9 <- '
       environment =~ tmean + trange + sal + pp + fr30m + reef_fraction
@@ -187,14 +303,25 @@ model9 <- '
       coral ~ environment + history + reg1 + reg2 + reg3 + reg4
       fish ~ coral + environment + history + reg1 + reg2 + reg3 + reg4
   '
-  
+model9_sq <- '
+      environment =~ tmean_2 + trange_2 + sal_2 + pp_2 + fr30m + reef_fraction
+      history =~ isolation + tmean_2
+    
+      coral ~ environment + history + reg1 + reg2 + reg3 + reg4
+      fish ~ coral + environment + history + reg1 + reg2 + reg3 + reg4
+  '
+
 fit9 <- sem(model9, fixed.x=F, 
       data=b,check.gradient=F,meanstructure = TRUE,
       estimator = "ML")
 
+fit9_sq <- sem(model9_sq, fixed.x=F, 
+            data=b,check.gradient=F,meanstructure = TRUE,
+            estimator = "ML")
 
   
-compareFit(fit0,fit1,fit2,fit3,fit4,fit5,fit6,fit7,fit8,fit9,nested=F)
+compareFit(fit0,fit0_sq,fit1,fit1_sq,fit2,fit2_sq,fit3,fit3_sq,fit4,fit4_sq,
+           fit5,fit5_sq,fit6,fit6_sq,fit7,fit7_sq,fit8,fit8_sq,fit9,fit9_sq,nested=F)
   
   
 #summary(fit1,standardized = T, fit.measures = T, rsq = T)
@@ -203,8 +330,8 @@ compareFit(fit0,fit1,fit2,fit3,fit4,fit5,fit6,fit7,fit8,fit9,nested=F)
 #dashed line indicates fixed parameter estimates
   
   
-library(semPlot)
-
+ library(semPlot)
+# 
 # lay<-matrix(c(12,1,
 #               1,1,
 #               0,-3,#lat  8
@@ -218,12 +345,12 @@ library(semPlot)
 #               6,-3,#reg2 10
 #               9,-3,#reg3 11
 #               12,-3,#reg4 12
-#               -4,3),#fr30 6  
+#               -4,3),#fr30 6
 #             ncol=2,byrow=TRUE)
 # 
 # lbs<-c('FISH','CORAL','|LAT|','Tm','Tr','ISO','SAL','PP','REEF',
 #   'WA','WIO','CIP','CP','30m')
-# semPaths(fit0, "std", 
+# semPaths(fit0, "std",
 #              residuals = FALSE,
 #          intercepts=FALSE,
 #          layout=lay,#'tree',
@@ -232,7 +359,7 @@ library(semPlot)
 #              thresholds=FALSE,nCharNodes = 5,
 #              optimizeLatRes = TRUE,
 #               whatLabels = "std",curve = 100,
-#              sizeMan=4,shapeMan='circle',
+#              sizeMan=4,#shapeMan='circle',
 #              nDigits=2,layoutSplit=TRUE,
 #              curveAdjacent='<->',edge.label.cex=0.6,
 #              edge.label.color='black',
@@ -255,11 +382,11 @@ library(semPlot)
 #          filetype='pdf',
 #          filename = 'prova_sem'
 #          )
-#   
+# 
 
 
 sc<-1
-for (f in c(fit0,fit1,fit2,fit3,fit4,fit5,fit6,fit7,fit8,fit9)){
+for (f in c(fit0_sq,fit1_sq,fit2_sq,fit3_sq,fit4_sq,fit5_sq,fit6_sq,fit7_sq,fit8_sq,fit9_sq)){
   
   
 semPaths(f, "std", 
@@ -284,7 +411,7 @@ semPaths(f, "std",
            colFactor=0.5,
            fade=TRUE,
            rescale=TRUE,filetype='pdf',
-           filename = sc,
+           filename = paste0(sc,'_sq'),
            mar=c(2,2,2,2)
   )
   sc<-sc+1
