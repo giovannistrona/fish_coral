@@ -421,14 +421,6 @@ for (f in c(fit0,fit0_sq,fit1,fit1_sq,fit2,fit2_sq,fit3,fit3_sq,fit4,fit4_sq,
         }
 
 
-####check spatial autocorrelation
-# model1 <- '
-#       fish ~ coral+ abs_lat + isolation + sal + pp 
-#       + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
-#       coral ~ abs_lat + tmean + trange + isolation + sal 
-#       + pp + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
-# '
-
 
 fish_gls<-gls(fish ~ coral+ abs_lat + isolation + sal + pp
               + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4,
