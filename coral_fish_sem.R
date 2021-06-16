@@ -11,10 +11,17 @@ library(lme4)
 library(nlme)
 library(piecewiseSEM)
 library(qgraph)
+
+prefix<-'sp_div_'
+norm_to_raw<-function(norm_l,raw_l){return(norm_l*max(raw_l)-norm_l*min(raw_l)+min(raw_l))}
+
+
 a<-read.csv('coralfishglobal.csv',header=T)
 a<-a[a$cor_diversity>0,]
 a<-a[a$fish_sp_div>0,]
 a<-a[a$reef_fraction>0,]
+a<-a[a$phylo_div>0,]
+a<-a[a$fe_n>0,]
 reg<-unique(a$Region)
 b<-data.frame(cbind(a$fish_sp_div,
                     a$cor_diversity,
@@ -320,148 +327,146 @@ fit9_sq <- sem(model9_sq, fixed.x=F,
             estimator = "ML")
 
   
-compareFit(fit0,fit0_sq,fit1,fit1_sq,fit2,fit2_sq,fit3,fit3_sq,fit4,fit4_sq,
+fits<-compareFit(fit0,fit0_sq,fit1,fit1_sq,fit2,fit2_sq,fit3,fit3_sq,fit4,fit4_sq,
            fit5,fit5_sq,fit6,fit6_sq,fit7,fit7_sq,fit8,fit8_sq,fit9,fit9_sq,nested=F)
   
-  
-#summary(fit1,standardized = T, fit.measures = T, rsq = T)
-#lavaanPlot(model=fit1,coefs = TRUE,covs=TRUE,stand = TRUE, sig = 1)
-  
-#dashed line indicates fixed parameter estimates
-  
-  
- library(semPlot)
-# 
-# lay<-matrix(c(12,1,
-#               1,1,
-#               0,-3,#lat  8
-#               1,5,#t     1
-#               4,5,#trange  2
-#               -3,-3,#iso  7
-#               7,5,#sal    3
-#               10,5,#pp     4
-#               -2,4,#reef  5
-#               3,-3,#reg1 9
-#               6,-3,#reg2 10
-#               9,-3,#reg3 11
-#               12,-3,#reg4 12
-#               -4,3),#fr30 6
-#             ncol=2,byrow=TRUE)
-# 
-# lbs<-c('FISH','CORAL','|LAT|','Tm','Tr','ISO','SAL','PP','REEF',
-#   'WA','WIO','CIP','CP','30m')
-# semPaths(fit0, "std",
-#              residuals = FALSE,
-#          intercepts=FALSE,
-#          layout=lay,#'tree',
-#              style = "lisrel",
-#              exoCov = FALSE,
-#              thresholds=FALSE,nCharNodes = 5,
-#              optimizeLatRes = TRUE,
-#               whatLabels = "std",curve = 100,
-#              sizeMan=4,#shapeMan='circle',
-#              nDigits=2,layoutSplit=TRUE,
-#              curveAdjacent='<->',edge.label.cex=0.6,
-#              edge.label.color='black',
-#              edge.width= 1.5,
-#              #edge.color='blue',
-#          posCol=c("blue","red"),
-#          nodeLabels=lbs,
-#              normalize=FALSE,
-#              label.color='black',
-#              label.cex=0.8,
-#              minimum=0.0,
-#              width=8,
-#              height=5,
-#              normalize=FALSE,
-#              trans=FALSE,
-#              colFactor=0.5,
-#              fade=T,
-#              rescale=TRUE,
-#              mar=c(0,6,0,6),
-#          filetype='pdf',
-#          filename = 'prova_sem'
-#          )
-# 
+library(semPlot)
+fit<-fit1
+
+lay<-matrix(c(12,1, #fish
+              1,1, #coral
+              0,-3,#lat 
+              -3,-3, #iso
+              7,5, #sal
+              10,5, #pp
+              -2,4,# reef
+              -4,3, #fr30
+              3,-3, #reg1
+              6,-3,#reg2
+              9,-3, #reg3
+              12,-3, # reg4  
+              1,5, #tmean
+              4,5), # trange
+            ncol=2,byrow=TRUE)
+
+lbs<-c('FISH','CORAL','|LAT|','ISO','SAL','PP','REEF','30m','WA','WIO','CIP','CP','Tm','Tr')
+semPaths(fit, "std",
+             residuals = FALSE,
+         intercepts=FALSE,
+         layout=lay,#'tree',
+             style = "lisrel",
+             exoCov = FALSE,
+             thresholds=FALSE,nCharNodes = 5,
+             optimizeLatRes = TRUE,
+              whatLabels = "std",curve = 100,
+             sizeMan=4,#shapeMan='circle',
+             nDigits=2,layoutSplit=TRUE,
+             curveAdjacent='<->',edge.label.cex=0.6,
+             edge.label.color='black',
+             edge.width= 1.5,
+             #edge.color='blue',
+         posCol=c("blue","red"),
+         nodeLabels=lbs,
+             normalize=FALSE,
+             label.color='black',
+             label.cex=0.8,
+             minimum=0.0,
+             width=8,
+             height=5,
+             normalize=FALSE,
+             trans=FALSE,
+             colFactor=0.5,
+             fade=T,
+             rescale=TRUE,
+             mar=c(0,6,0,6),
+         filetype='pdf',
+         filename = paste0(prefix,'best_model')
+    )
+
 
 
 sc<-1
-for (f in c(fit0_sq,fit1_sq,fit2_sq,fit3_sq,fit4_sq,fit5_sq,fit6_sq,fit7_sq,fit8_sq,fit9_sq)){
-  
-  
-semPaths(f, "std", 
-           residuals = FALSE, intercepts=FALSE,layout='tree',
-           style = "lisrel",
-           exoCov = FALSE,
-           thresholds=FALSE,nCharNodes = 5,
-           optimizeLatRes = TRUE,
-           whatLabels = "std",curve = 1,
-           sizeMan=4,
-           nDigits=2,layoutSplit=FALSE,
-           curveAdjacent='<->',edge.label.cex=0.6,
-           edge.label.color='black',
-           edge.width= 1.5,
-         posCol=c("blue","red"),
-           normalize=FALSE,
-           label.color='black',
-           label.cex=0.8,
-           minimum=0.0,
-           normalize=TRUE,
-           trans=FALSE,
-           colFactor=0.5,
-           fade=TRUE,
-           rescale=TRUE,filetype='pdf',
-           filename = paste0(sc,'_sq'),
-           mar=c(2,2,2,2)
-  )
-  sc<-sc+1
-  
-}
+
+names<-sort(paste0('fit',rep(0:9,2),c(rep('',10),rep('_sq',10))))
+
+for (f in c(fit0,fit0_sq,fit1,fit1_sq,fit2,fit2_sq,fit3,fit3_sq,fit4,fit4_sq,
+            fit5,fit5_sq,fit6,fit6_sq,fit7,fit7_sq,fit8,fit8_sq,fit9,fit9_sq)){
+      
+              semPaths(f, "std", 
+                 residuals = FALSE, intercepts=FALSE,layout='tree',
+                 style = "lisrel",
+                 exoCov = FALSE,
+                 thresholds=FALSE,nCharNodes = 5,
+                 optimizeLatRes = TRUE,
+                 whatLabels = "std",curve = 1,
+                 sizeMan=4,
+                 nDigits=2,layoutSplit=FALSE,
+                 curveAdjacent='<->',edge.label.cex=0.6,
+                 edge.label.color='black',
+                 edge.width= 1.5,
+                 posCol=c("blue","red"),
+                 normalize=FALSE,
+                 label.color='black',
+                 label.cex=0.8,
+                 minimum=0.0,
+                 normalize=TRUE,
+                 trans=FALSE,
+                 colFactor=0.5,
+                 fade=TRUE,
+                 rescale=TRUE,filetype='pdf',
+                 filename = names[sc],
+                 mar=c(2,2,2,2)
+                )
+            sc<-sc+1
+        }
 
 
-####
 ####check spatial autocorrelation
-# fish_gls<-gls(fish ~ coral+ abs_lat + isolation + sal + pp 
-#               + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4,
-#               data=b)
-# 
-# 
-# cor_gls<-gls(coral ~ abs_lat + tmean + trange + isolation + sal 
-#              + pp + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4,
-#              data=b)
-# 
-# 
-# p.sem<-psem(cor_gls,fish_gls,data = b)
-# #mod<-summary(p.sem)
-# coef<-coefs(p.sem,standardize = "scale")#[,c(1,2,8)]
-# 
-# vario_fish <- Variogram(fish_gls, form = ~lon + lat, resType = "pearson",maxDist=500)
-# vario_cor <- Variogram(cor_gls, form = ~lon + lat, resType = "pearson",maxDist=500)
-# pdf('variograms.pdf')
-# plot(vario_fish, smooth = F,main='fish')
-# plot(vario_cor, smooth = F,main='coral')
-# dev.off()
+# model1 <- '
+#       fish ~ coral+ abs_lat + isolation + sal + pp 
+#       + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
+#       coral ~ abs_lat + tmean + trange + isolation + sal 
+#       + pp + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4
+# '
+
+
+fish_gls<-gls(fish ~ coral+ abs_lat + isolation + sal + pp
+              + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4,
+              data=b)
+
+
+cor_gls<-gls(coral ~ abs_lat + tmean + trange + isolation + sal
+             + pp + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4,
+             data=b)
+
+
+vario_fish <- Variogram(fish_gls, form = ~lon + lat, resType = "pearson",maxDist=500)
+vario_cor <- Variogram(cor_gls, form = ~lon + lat, resType = "pearson",maxDist=500)
+pdf('variograms.pdf')
+plot(vario_fish, smooth = F,main='fish')
+plot(vario_cor, smooth = F,main='coral')
+dev.off()
 
 
 spaceCor<-corLin(form =~ lon+lat, nugget=F)
-cor_gls_sp<-gls(fish ~ coral+ abs_lat + tmean + trange + isolation 
-             + sal + pp + reef_fraction  
-             + reg1 + reg2 + reg3 + reg4,
+fish_gls_sp<-gls(fish ~ coral+ abs_lat + isolation + sal + pp
+                + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4,
              correlation = spaceCor,
              data=b)
 
 spaceCor<-corLin(form =~ lon+lat, nugget=T)
-fish_gls_sp<-gls(coral ~ abs_lat + tmean + trange 
-              + isolation + sal + pp + reef_fraction 
-              + fr30m + reg1 + reg2 + reg3 + reg4,
+cor_gls_sp<-gls(coral ~ abs_lat + tmean + trange + isolation + sal
+                + pp + reef_fraction + fr30m + reg1 + reg2 + reg3 + reg4,
               correlation = spaceCor,
               data=b)
 
 sp.sem<-psem(cor_gls_sp,fish_gls_sp, data = b)
 #mod<-summary(p.sem)
 coef<-coefs(sp.sem,standardize = "scale")#[,c(1,2,8)]
+sink('spatial_coefs.txt')
+coef
+sink()
 
-fit<-fit0
 pdf('fish_coral_sem_summary.pdf',useDingbats = F)
 par(mfrow=c(2,2)) 
 summary(fit, standardized=TRUE,fit.measures=T)
@@ -477,16 +482,11 @@ summary(lm(b[,1]~predictions))
 intercept<-lm(b[,1]~predictions)[[1]][1]
 predictions<-predictions+intercept
 
-# mod<-lm(b[,1]~predictions)
-# ####check spatial autocorrelation in model residuals
-# residuals<-resid(mod) 
-# dists <- as.matrix(dist(cbind(a$lon, a$lat)))
-# dists.inv <- 1/dists
-# diag(dists.inv) <- 0
-# Moran.I(residuals, dists.inv,scaled=T)
 
 r2<-round(cor(b[,1],predictions)**2,2)
-plot(b[,1]*2794+1,predictions*2794+1,
+
+
+plot(a$fish_sp_div,norm_to_raw(predictions,a$fish_sp_div),
      xlab='observed fish diversity',ylab='modelled fish diversity',
      main = paste('R2 =',r2),
      col=plasma(1,alpha=0.5)[1],
@@ -503,13 +503,37 @@ predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
 predictions_no_coral<-predictions_no_coral+intercept
 predictions[predictions<0]<-0
 predictions_no_coral[predictions_no_coral<0]<-0
-afl = 1-predictions_no_coral/predictions
-afl[which(predictions==0)] = 0
-mean(afl)
-sd(afl)
+raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+afl = 1-raw_predictions_no_coral/raw_predictions
 
-fd0<-2794*new_data$fish+1
-ppp<-sum(fd0*afl)/sum(fd0)
+r2<-round(cor(a$fish_sp_div,raw_predictions)**2,2)
+
+sink(paste0(prefix,'model_fits.txt'))
+fits
+paste('R2',r2)
+paste('mean dep',mean(afl))
+paste('sd dep',sd(afl))
+sink()
+
+
+
+###data for maps
+data4maps<-data.frame(cbind(a$lat,a$lon,a$cor_diversity,a$fish_sp_div,
+                            afl*a$fish_sp_div,a$fish_sp_div-afl*a$fish_sp_div,afl,b$lit_dep))
+
+
+colnames(data4maps)<-c('lat','lon',
+                       'coral','fish',
+                       'dependent_fish_model','fish_loss_model',
+                       'model_dependency','lit_dependency')
+
+
+write.table(data4maps,file=paste0(prefix,'data4maps.csv'),quote=F,sep=',',row.names=F)
+
+
+
+fd0<-a$fish_sp_div
 
 
 res<-data.frame(cbind(b,afl))
@@ -524,18 +548,14 @@ plot(res$lit_dep,res$pred_dep,
 
 abline(0,1)
 
-high<-which(afl>b[,1])
-tot_dep<-b[,1]
-tot_dep[high]<-afl[high]
-mean(tot_dep) ###taking the max dependence (either from literature or from the model)
 
-plot(b[,1]*2794+1,predictions*2794+1,
+plot(a$fish_sp_div,raw_predictions,
      xlab='observed fish diversity',ylab='modelled fish diversity',
      las=1,cex.axis=1.2,cex.lab=1.2,
      pch=16,cex=0.8,col=plasma(3,alpha=0.5)[1])
 
 
-points(b[,1]*2794+1,predictions_no_coral*2794+1,col=plasma(3,alpha=0.5)[2],pch=16,cex=0.8)
+points(a$fish_sp_div,raw_predictions_no_coral,col=plasma(3,alpha=0.5)[2],pch=16,cex=0.8)
 abline(0,1)
 legend(0,1,c('with corals','without corals'),col=plasma(3)[1:2],pch=15)
 
@@ -552,8 +572,9 @@ for (cor_loss in seq(0,1,0.1)){
     predictions_no_coral<-predictions_no_coral+intercept
     predictions[predictions<0]<-0
     predictions_no_coral[predictions_no_coral<0]<-0
-    afl = 1-predictions_no_coral/predictions
-    afl[which(predictions==0)] = 0
+    raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+    raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+    afl = 1-raw_predictions_no_coral/raw_predictions
     afl <- mean(afl)
     x<-c(x,cor_loss)
     y<-c(y,cor_fract_loss)
@@ -568,347 +589,6 @@ image.plot(interp(x,y,z),col=plasma(20),
 
 
 dev.off()
-
-###coral diversity theoretical scenarios
-fd0<-2794*b$fish+1
-x1<-c()
-y1<-c()
-y1_raw<-c()
-n<-dim(b)[1]
-
-for (rep in 1:100){
-new_data<-b
-to_del<-sample(1:n)
-for (cor_loss in 1:n){
-  new_data[to_del[cor_loss],2]<-0
-  new_data[to_del[cor_loss],5]<-0
-  predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-  predictions_no_coral<-predictions_no_coral+intercept
-  predictions[predictions<0]<-0
-  predictions_no_coral[predictions_no_coral<0]<-0
-  afl = 1-predictions_no_coral/predictions
-  afl[which(predictions==0)] = 0
-  x1<-c(x1,cor_loss)
-  glob_loss<-fd0*afl
-  y1<-c(y1,100*(1-mean((fd0-glob_loss)/fd0)))
-  y1_raw<-c(y1_raw,mean(glob_loss))
-}
-print(rep)
-}
-
-####best-worst case
-###get the effect per locality
-new_data<-b
-new_data[,2]<-0
-new_data[,5]<-0
-predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-predictions_no_coral<-predictions_no_coral+intercept
-predictions[predictions<0]<-0
-predictions_no_coral[predictions_no_coral<0]<-0
-afl = 1-predictions_no_coral/predictions
-afl[which(predictions==0)] = 0
-glob_loss<-fd0*afl
-glob_loss_p<-afl
-
-best<-sort(glob_loss,index.return=T)$ix
-worst<-sort(glob_loss,index.return=T,decreasing = TRUE)$ix
-best_p<-sort(glob_loss_p,index.return=T)$ix
-worst_p<-sort(glob_loss_p,index.return=T,decreasing = TRUE)$ix
-
-
-#worst - reefs obliterated from most coral rich to poorest
-y2_raw<-c()
-n<-dim(b)[1]
-new_data<-b
-for (to_del in worst){
-new_data[to_del,2]<-0
-new_data[to_del,5]<-0
-predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-predictions_no_coral<-predictions_no_coral+intercept
-predictions[predictions<0]<-0
-predictions_no_coral[predictions_no_coral<0]<-0
-afl = 1-predictions_no_coral/predictions
-afl[which(predictions==0)] = 0
-glob_loss<-fd0*afl
-y2_raw<-c(y2_raw,mean(glob_loss))
-}
-
-
-y2<-c()
-new_data<-b
-for (to_del in worst_p){
-new_data[to_del,2]<-0
-new_data[to_del,5]<-0
-predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-predictions_no_coral<-predictions_no_coral+intercept
-predictions[predictions<0]<-0
-predictions_no_coral[predictions_no_coral<0]<-0
-afl = 1-predictions_no_coral/predictions
-afl[which(predictions==0)] = 0
-glob_loss<-fd0*afl
-y2<-c(y2,100*(1-mean((fd0-glob_loss)/fd0)))
-}
-
-#best - reefs obliterated from coral poorest to richest 
-y3_raw<-c()
-n<-dim(b)[1]
-new_data<-b
-for (to_del in best){
-new_data[to_del,2]<-0
-new_data[to_del,5]<-0
-predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-predictions_no_coral<-predictions_no_coral+intercept
-predictions[predictions<0]<-0
-predictions_no_coral[predictions_no_coral<0]<-0
-afl = 1-predictions_no_coral/predictions
-afl[which(predictions==0)] = 0
-glob_loss<-fd0*afl
-y3_raw<-c(y3_raw,mean(glob_loss))
-}
-
-
-y3<-c()
-new_data<-b
-for (to_del in best_p){
-new_data[to_del,2]<-0
-new_data[to_del,5]<-0
-predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-predictions_no_coral<-predictions_no_coral+intercept
-predictions[predictions<0]<-0
-predictions_no_coral[predictions_no_coral<0]<-0
-afl = 1-predictions_no_coral/predictions
-afl[which(predictions==0)] = 0
-glob_loss<-fd0*afl
-y3<-c(y3,100*(1-mean((fd0-glob_loss)/fd0)))
-}
-
-
-
-pdf('theoretical_loss.pdf',height=5,width=10)
-par(mfrow=c(1,2))
-x1<-100*x1/max(x1)
-
-
-y1_<-aggregate(y1~x1,FUN='mean')[,2]
-y1_min<-aggregate(y1~x1,FUN='min')[,2]
-y1_max<-aggregate(y1~x1,FUN='max')[,2]
-
-x<-x1[1:n]
-plot(x,y2,type='l',las=1,cex.axis=1.2,cex.lab=1.2,
-  xlab='reef loss (%)',ylab = 'mean fish loss (%)',
-  main='A',lwd=1.5,col='red')
-
-lines(x,y3,lwd=1.5,col='blue')
-polygon(c(rev(x), x), c(rev(y1_min),y1_max), 
-     col = 'lightgrey', border = NA)
-lines(x,y1_,lwd=1.5)
-
-
-y1_raw_<-aggregate(y1_raw~x1,FUN='mean')[,2]
-#y1_raw_sd<-aggregate(y1_raw~x1,FUN='sd')[,2]
-y1_raw_max<-aggregate(y1_raw~x1,FUN='max')[,2]
-y1_raw_min<-aggregate(y1_raw~x1,FUN='min')[,2]
-
-
-plot(x,y2_raw, type='l',las=1,cex.axis=1.2,cex.lab=1.2,
-        xlab='reef loss (%)',
-   ylab = 'mean fish loss (no. spp.)',
-   main='B',lwd=1.5,col='red')
-lines(x,y3_raw,lwd=1.5,col='blue')
-
-polygon(c(rev(x), x), c(rev(y1_raw_min),y1_raw_max), 
-      col = 'lightgrey', border = NA)
-lines(x,y1_raw_,lwd=1.5)
-
-
-legend(60,200,bty='n',c('worst','random','best'),col=c('red','black','blue'),pch=15,pt.cex=1.5,title='reef loss scenario')
-
-dev.off()
-
-#####climatic scenarios
-#non cumulative
-  
-fd0<-2794*b$fish+1
-scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
-x<-seq(2015,2100,length.out=n)
-res<-c()
-for (scen in 1:3){
-ssp<-read.csv(scen_fff[scen],header=F)
-ssp<-ssp[,ok]
-y1<-c()
-n<-1032
-for (mo in 1:n){
-  new_data<-b
-  anom<-which(ssp[mo,]>1)
-  new_data[anom,2]<-0
-  new_data[anom,5]<-0
-  predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-  predictions_no_coral<-predictions_no_coral+intercept
-  predictions[predictions<0]<-0
-  predictions_no_coral[predictions_no_coral<0]<-0
-  afl = 1-predictions_no_coral/predictions
-  afl[which(predictions==0)] = 0
-  glob_loss<-fd0*afl
-  y1<-c(y1,100*(1-mean((fd0-glob_loss)/fd0)))
-}
-res<-cbind(res,y1)
-}
-
-pdf('climatic_non_cum.pdf',width=5,height=5)
-plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,30),las=1,cex.axis=1.2,cex.lab=1.2,
-   xlab='year',ylab='fish loss (%, monthly estimate)',col='white')
-
-for (s in 1:3){
-y1<-res[,s]
-lines(x,y1,col=viridis(4,alpha=0.4)[s])}
-
-for (s in 1:3){
-y1<-res[,s]
-y_<-aggregate(y1~round(x/10),FUN='mean')  
-lines(y_[,1]*10,y_[,2],col=viridis(4)[s],lwd=2)  
-}
-
-legend(2015,30,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
-dev.off()
-
-  
-  #####climatic_cumulative
-pdf('climatic_cum.pdf',width=5,height=5)
-  plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,45),las=1,cex.axis=1.2,cex.lab=1.2,
-       xlab='year',ylab='fish loss (%, cumulative)')
-  scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
-  for (scen in 1:3){
-    ssp<-read.csv(scen_fff[scen],header=F)
-    ssp<-ssp[,ok]
-    y1<-c()
-    n<-1032
-    new_data<-b
-    for (mo in 1:n){
-      anom<-which(ssp[mo,]>1)
-      new_data[anom,2]<-0
-      new_data[anom,5]<-0
-      predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-      predictions_no_coral<-predictions_no_coral+intercept
-      predictions[predictions<0]<-0
-      predictions_no_coral[predictions_no_coral<0]<-0
-      afl = 1-predictions_no_coral/predictions
-      afl[which(predictions==0)] = 0
-      glob_loss<-2794*new_data$fish*afl+1
-      y1<-c(y1,100*(1-mean((fd0-glob_loss)/fd0)))}
-    
-    lines(x,y1,col=viridis(4,alpha=1)[scen],lwd=2)
-  }
-  legend(2070,15,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
-  dev.off()
-  
-  
-  ###check coral loss through time 
-  scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
-  res<-c()
-  for (scen in 1:3){
-    ssp<-read.csv(scen_fff[scen],header=F)
-    ssp<-ssp[,ok]
-    y1<-c()
-    n<-1032
-    for (mo in 1:n){
-      new_data<-b
-      anom<-which(ssp[mo,]>1)
-      new_data[anom,2]<-0
-      new_data[anom,5]<-0
-      y1<-c(y1,100*sum(new_data[,2]==0)/dim(b)[1])
-    }
-    res<-cbind(res,y1)
-  }
-  
-  
-  pdf('coral_loss_anom.pdf',width=5,height=5)
-  plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,65),las=1,cex.axis=1.2,cex.lab=1.2,
-       xlab='year',ylab='reefs at risk (%, monthly)')
-  
-  for (s in 1:3){
-    y1<-res[,s]
-    lines(x,y1,col=viridis(4,alpha=0.4)[s])}
-  
-  for (s in 1:3){
-    y1<-res[,s]
-    y_<-aggregate(y1~round(x/10),FUN='mean')  
-    lines(y_[,1]*10,y_[,2],col=viridis(4)[s],lwd=2)  
-  }
-  
-  legend(2015,65,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
-  dev.off()
-  
-  #################cumulative reefs at risk
-  pdf('coral_loss_anom_cum.pdf',width=5,height=5)
-  plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,100),las=1,cex.axis=1.2,cex.lab=1.2,
-       xlab='year',ylab='reefs at risk (%, cumulative)')
-  
-  scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
-  for (scen in 1:3){
-    ssp<-read.csv(scen_fff[scen],header=F)
-    ssp<-ssp[,ok]
-    y1<-c()
-    n<-1032
-    new_data<-b
-    for (mo in 1:n){
-      anom<-which(ssp[mo,]>1)
-      new_data[anom,2]<-0
-      new_data[anom,5]<-0
-      y1<-c(y1,100*sum(new_data[,2]==0)/dim(b)[1])
-    }
-    
-    lines(seq(2015,2100,length.out=n),y1,col=viridis(4)[scen],lwd=2)
-  }
-  
-  legend(2015,100,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
-  
-  dev.off()
-  
-
-
-####raw div with/without corals
-par(mfrow=c(1,1))
-new_data<-b
-new_data[,2]<-0
-new_data[,5]<-0
-predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
-predictions_no_coral<-predictions_no_coral+intercept
-predictions[predictions<0]<-0
-predictions_no_coral[predictions_no_coral<0]<-0
-afl = 1-predictions_no_coral/predictions
-afl[which(predictions==0)] = 0
-glob_loss<-new_data$fish-new_data$fish*afl
-
-pdf('figS8.pdf',height=5,width=5)
-plot(density(log(new_data$fish*2794+1)),col=plasma(3)[1],lwd=1.5,main='',
-     las=1,cex.axis=1.2,cex.lab=1.2,xlab = 'log(fish spp)')
-polygon(density(log(new_data$fish*2794+1)),col=plasma(3,alpha=0.2)[1],border=NA)
-lines(density(log(glob_loss*2794+1)),col=plasma(3)[2],lwd=1.5)
-polygon(density(log(glob_loss*2794+1)),col=plasma(3,alpha=0.2)[2],border=NA)
-legend(0,0.8,c('with corals','without corals'),col=plasma(3)[1:2],pch=15)
-dev.off()
-
-
-# ##explore loss vs div
-# 
-# bb<-aggregate(res$pred_dep~round(log(res$fish*2794+1),1),FUN='mean')
-# bb_sd<-aggregate(res$pred_dep~round(log(res$fish*2794+1),1),FUN='sd')[,2]
-# rho<-round(as.numeric(cor.test(res$pred_dep,log(res$fish*2794+1),method='spearman')[[4]]),2)
-# 
-# pdf('dependency_vs_fish_diversity.pdf',useDingbats = F)
-# plot(bb[,1],bb[,2],type='n',
-#      ylim=c(0,1),main=paste("Spearman's rho=",rho),
-#      xlab='fish diversity',ylab='coral dependency',
-#      las=1, cex.axis=1.2,cex.lab=1.2)
-# 
-# lines(bb[,1],bb[,2],col=plasma(1)[1],lwd=1.5)
-# points(bb[,1],bb[,2],col=plasma(1)[1],pch=16,cex=0.5)
-# polygon(c(rev(bb[,1]),bb[,1]),c(rev(bb[,2]-bb_sd),bb[,2]+bb_sd),
-#         col=plasma(1,alpha=0.3)[1],border=NA)
-# 
-# abline(lm(res$pred_dep~res$fish),col='darkred',lty=2,lwd=1.5)
-# abline(h=median(res$pred_dep),lwd=1,lty=2)
-# dev.off()
 
 
 # levels(res$region)
@@ -956,7 +636,7 @@ legend(bp[3]+0.3,0.8,c(rownames(t),'predicted'),
        pch=c(15,15,15,16),pt.cex=c(2,2,2,1),
        cex = 0.8)
 dev.off()
-  
+
 ###fig s1
 r2 = round(cor(a$cor_diversity,a$fish_sp_div),2)
 pdf('figS1.pdf',height=5,width = 5)
@@ -966,21 +646,361 @@ plot(a$cor_diversity,a$fish_sp_div,
      col=plasma(1,alpha=0.5)[1],
      las=1,cex.axis=1.2,cex.lab=1.2,
      pch=16,cex=0.8)
-    abline(lm(a$fish_sp_div~a$cor_diversity))  
+abline(lm(a$fish_sp_div~a$cor_diversity))  
 
 dev.off()     
-     
-     
-     
-###data for maps
-data4maps<-data.frame(cbind(a$lat,a$lon,a$cor_diversity,a$fish_sp_div,
-  res$pred_dep*a$fish_sp_div,a$fish_sp_div-(res$pred_dep*a$fish_sp_div),
-  res$pred_dep,res$lit_dep))
 
-colnames(data4maps)<-c('lat','lon',
-                       'coral','fish',
-                       'dependent_fish_model','fish_loss_model',
-                       'model_dependency','lit_dependency')
-      
-write.table(data4maps,file='data4maps.csv',quote=F,sep=',',row.names=F)
-      
+
+
+###coral diversity theoretical scenarios
+fd0<-a$fish_sp_div
+x1<-c()
+y1<-c()
+y1_raw<-c()
+n<-dim(b)[1]
+
+for (rep in 1:100){
+new_data<-b
+to_del<-sample(1:n)
+for (cor_loss in 1:n){
+  new_data[to_del[cor_loss],2]<-0
+  new_data[to_del[cor_loss],5]<-0
+  predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+  predictions_no_coral<-predictions_no_coral+intercept
+  predictions[predictions<0]<-0
+  predictions_no_coral[predictions_no_coral<0]<-0
+  raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+  raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+  afl = 1-raw_predictions_no_coral/raw_predictions
+  x1<-c(x1,cor_loss)
+  glob_loss<-fd0*afl
+  y1<-c(y1,100*(1-mean((fd0-glob_loss)/fd0)))
+  y1_raw<-c(y1_raw,mean(glob_loss))
+}
+print(rep)
+}
+
+####best-worst case
+###get the effect per locality
+new_data<-b
+new_data[,2]<-0
+new_data[,5]<-0
+predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+predictions_no_coral<-predictions_no_coral+intercept
+predictions[predictions<0]<-0
+predictions_no_coral[predictions_no_coral<0]<-0
+raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+afl = 1-raw_predictions_no_coral/raw_predictions
+glob_loss<-fd0*afl
+glob_loss_p<-afl
+
+best<-sort(glob_loss,index.return=T)$ix
+worst<-sort(glob_loss,index.return=T,decreasing = TRUE)$ix
+best_p<-sort(glob_loss_p,index.return=T)$ix
+worst_p<-sort(glob_loss_p,index.return=T,decreasing = TRUE)$ix
+
+
+#worst - reefs obliterated from most coral rich to poorest
+y2_raw<-c()
+n<-dim(b)[1]
+new_data<-b
+for (to_del in worst){
+new_data[to_del,2]<-0
+new_data[to_del,5]<-0
+predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+predictions_no_coral<-predictions_no_coral+intercept
+predictions[predictions<0]<-0
+predictions_no_coral[predictions_no_coral<0]<-0
+raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+afl = 1-raw_predictions_no_coral/raw_predictions
+glob_loss<-fd0*afl
+y2_raw<-c(y2_raw,mean(glob_loss))
+}
+
+
+y2<-c()
+new_data<-b
+for (to_del in worst_p){
+new_data[to_del,2]<-0
+new_data[to_del,5]<-0
+predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+predictions_no_coral<-predictions_no_coral+intercept
+predictions[predictions<0]<-0
+predictions_no_coral[predictions_no_coral<0]<-0
+raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+afl = 1-raw_predictions_no_coral/raw_predictions
+glob_loss<-fd0*afl
+y2<-c(y2,100*(1-mean((fd0-glob_loss)/fd0)))
+}
+
+#best - reefs obliterated from coral poorest to richest 
+y3_raw<-c()
+n<-dim(b)[1]
+new_data<-b
+for (to_del in best){
+new_data[to_del,2]<-0
+new_data[to_del,5]<-0
+predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+predictions_no_coral<-predictions_no_coral+intercept
+predictions[predictions<0]<-0
+predictions_no_coral[predictions_no_coral<0]<-0
+raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+afl = 1-raw_predictions_no_coral/raw_predictions
+glob_loss<-fd0*afl
+y3_raw<-c(y3_raw,mean(glob_loss))
+}
+
+
+y3<-c()
+new_data<-b
+for (to_del in best_p){
+new_data[to_del,2]<-0
+new_data[to_del,5]<-0
+predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+predictions_no_coral<-predictions_no_coral+intercept
+predictions[predictions<0]<-0
+predictions_no_coral[predictions_no_coral<0]<-0
+raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+afl = 1-raw_predictions_no_coral/raw_predictions
+glob_loss<-fd0*afl
+y3<-c(y3,100*(1-mean((fd0-glob_loss)/fd0)))
+}
+
+
+
+pdf('theoretical_loss.pdf',height=5,width=10)
+par(mfrow=c(1,2))
+x1<-100*x1/max(x1)
+
+
+y1_<-aggregate(y1~x1,FUN='mean')[,2]
+y1_min<-aggregate(y1~x1,FUN='min')[,2]
+y1_max<-aggregate(y1~x1,FUN='max')[,2]
+
+x<-x1[1:n]
+plot(x,y2,type='l',las=1,cex.axis=1.2,cex.lab=1.2,
+  xlab='reef loss (%)',ylab = 'mean fish loss (%)',
+  main='A',lwd=1.5,col='red')
+
+lines(x,y3,lwd=1.5,col='blue')
+polygon(c(rev(x), x), c(rev(y1_min),y1_max), 
+     col = 'lightgrey', border = NA)
+lines(x,y1_,lwd=1.5)
+
+
+y1_raw_<-aggregate(y1_raw~x1,FUN='mean')[,2]
+#y1_raw_sd<-aggregate(y1_raw~x1,FUN='sd')[,2]
+y1_raw_max<-aggregate(y1_raw~x1,FUN='max')[,2]
+y1_raw_min<-aggregate(y1_raw~x1,FUN='min')[,2]
+
+
+plot(x,y2_raw, type='l',las=1,cex.axis=1.2,cex.lab=1.2,
+        xlab='reef loss (%)',
+   ylab = 'mean fish loss (no. spp.)',
+   main='B',lwd=1.5,col='red')
+lines(x,y3_raw,lwd=1.5,col='blue')
+
+polygon(c(rev(x), x), c(rev(y1_raw_min),y1_raw_max), 
+      col = 'lightgrey', border = NA)
+lines(x,y1_raw_,lwd=1.5)
+
+
+legend(60,200,bty='n',c('worst','random','best'),col=c('red','black','blue'),pch=15,pt.cex=1.5,title='reef loss scenario')
+
+dev.off()
+
+
+n<-dim(b)[1]
+x<-seq(0,100,length.out = n)
+
+th_tab<-cbind(x,y1_,y1_raw_,y2,y2_raw,y3,y3_raw)
+colnames(th_tab)<-c('coral_loss','random','random_raw','worst','worst_raw','best','best_raw')
+
+write.table(th_tab,paste0(prefix,'th_tab.csv'),col.names=T,row.names=F,quote=F,sep=',')
+
+
+
+#####climatic scenarios
+#non cumulative
+  
+fd0<-a$fish_sp_div
+n<-1032
+scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
+x<-seq(2015,2100,length.out=n)
+res<-c()
+for (scen in 1:3){
+ssp<-read.csv(scen_fff[scen],header=F)
+ssp<-ssp[,ok]
+y1<-c()
+for (mo in 1:n){
+  new_data<-b
+  anom<-which(ssp[mo,]>1)
+  new_data[anom,2]<-0
+  new_data[anom,5]<-0
+  predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+  predictions_no_coral<-predictions_no_coral+intercept
+  predictions[predictions<0]<-0
+  predictions_no_coral[predictions_no_coral<0]<-0
+  raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+  raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+  afl = 1-raw_predictions_no_coral/raw_predictions
+  glob_loss<-fd0*afl
+  y1<-c(y1,100*(1-mean((fd0-glob_loss)/fd0)))
+}
+res<-cbind(res,y1)
+}
+
+
+pdf('climatic_non_cum.pdf',width=5,height=5)
+plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,30),las=1,cex.axis=1.2,cex.lab=1.2,
+   xlab='year',ylab='fish loss (%, monthly estimate)',col='white')
+
+for (s in 1:3){
+y1<-res[,s]
+lines(x,y1,col=viridis(4,alpha=0.4)[s])}
+
+for (s in 1:3){
+y1<-res[,s]
+y_<-aggregate(y1~round(x/10),FUN='mean')  
+lines(y_[,1]*10,y_[,2],col=viridis(4)[s],lwd=2)  
+}
+
+legend(2015,30,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
+dev.off()
+
+res_clim<-cbind(x,res)
+#####climatic_cumulative
+pdf('climatic_cum.pdf',width=5,height=5)
+plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,45),las=1,cex.axis=1.2,cex.lab=1.2,
+     xlab='year',ylab='fish loss (%, cumulative)')
+
+scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
+for (scen in 1:3){
+  ssp<-read.csv(scen_fff[scen],header=F)
+  ssp<-ssp[,ok]
+  y1<-c()
+  new_data<-b
+  for (mo in 1:n){
+    anom<-which(ssp[mo,]>1)
+    new_data[anom,2]<-0
+    new_data[anom,5]<-0
+    predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+    predictions_no_coral<-predictions_no_coral+intercept
+    predictions[predictions<0]<-0
+    predictions_no_coral[predictions_no_coral<0]<-0
+    raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+    raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+    afl = 1-raw_predictions_no_coral/raw_predictions
+    glob_loss<-2794*new_data$fish*afl+1
+    y1<-c(y1,100*(1-mean((fd0-glob_loss)/fd0)))}
+  res_clim<-cbind(res_clim,y1)
+  lines(x,y1,col=viridis(4,alpha=1)[scen],lwd=2)
+  }
+
+legend(2070,15,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
+dev.off()
+  
+
+colnames(res_clim)<-c('year','loss_SSP2','loss_SSP3','loss_SSP5',
+                      'cum_loss_SSP2','cum_loss_SSP3','cum_loss_SSP5')
+
+
+write.table(res_clim,paste0(prefix,'clim_tab.csv'),col.names=T,row.names=F,quote=F,sep=',')
+
+
+###check coral loss through time 
+scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
+res<-c()
+for (scen in 1:3){
+  ssp<-read.csv(scen_fff[scen],header=F)
+  ssp<-ssp[,ok]
+  y1<-c()
+  n<-1032
+  for (mo in 1:n){
+    new_data<-b
+    anom<-which(ssp[mo,]>1)
+    new_data[anom,2]<-0
+    new_data[anom,5]<-0
+    y1<-c(y1,100*sum(new_data[,2]==0)/dim(b)[1])
+  }
+  res<-cbind(res,y1)
+}
+
+
+pdf('coral_loss_anom.pdf',width=5,height=5)
+plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,65),las=1,cex.axis=1.2,cex.lab=1.2,
+     xlab='year',ylab='reefs at risk (%, monthly)')
+
+for (s in 1:3){
+  y1<-res[,s]
+  lines(x,y1,col=viridis(4,alpha=0.4)[s])}
+
+for (s in 1:3){
+  y1<-res[,s]
+  y_<-aggregate(y1~round(x/10),FUN='mean')  
+  lines(y_[,1]*10,y_[,2],col=viridis(4)[s],lwd=2)  
+}
+
+legend(2015,65,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
+dev.off()
+
+#################cumulative reefs at risk
+pdf('coral_loss_anom_cum.pdf',width=5,height=5)
+plot(0,0,type='l',xlim=c(2015,2100),ylim=c(0,100),las=1,cex.axis=1.2,cex.lab=1.2,
+     xlab='year',ylab='reefs at risk (%, cumulative)')
+
+scen_fff <- c('ssp2_bl_risk.csv','ssp3_bl_risk.csv','ssp5_bl_risk.csv')
+for (scen in 1:3){
+  ssp<-read.csv(scen_fff[scen],header=F)
+  ssp<-ssp[,ok]
+  y1<-c()
+  n<-1032
+  new_data<-b
+  for (mo in 1:n){
+    anom<-which(ssp[mo,]>1)
+    new_data[anom,2]<-0
+    new_data[anom,5]<-0
+    y1<-c(y1,100*sum(new_data[,2]==0)/dim(b)[1])
+  }
+  
+  lines(seq(2015,2100,length.out=n),y1,col=viridis(4)[scen],lwd=2)
+}
+
+legend(2015,100,c('SSP5-8.5','SSP3-7.0','SSP2-4.5'),rev(viridis(4)[1:3]),pt.cex=2)
+
+dev.off()
+
+
+
+####raw div with/without corals
+par(mfrow=c(1,1))
+new_data<-b
+new_data[,2]<-0
+new_data[,5]<-0
+predictions_no_coral <- as.matrix(new_data[,cnames])%*% coef
+predictions_no_coral<-predictions_no_coral+intercept
+predictions[predictions<0]<-0
+predictions_no_coral[predictions_no_coral<0]<-0
+raw_predictions<-norm_to_raw(predictions,a$fish_sp_div)
+raw_predictions_no_coral<-norm_to_raw(predictions_no_coral,a$fish_sp_div)
+afl = 1-raw_predictions_no_coral/raw_predictions
+glob_loss<-new_data$fish-new_data$fish*afl
+
+pdf('figS8.pdf',height=5,width=5)
+plot(density(log(new_data$fish*2794+1)),col=plasma(3)[1],lwd=1.5,main='',
+     las=1,cex.axis=1.2,cex.lab=1.2,xlab = 'log(fish spp)')
+polygon(density(log(new_data$fish*2794+1)),col=plasma(3,alpha=0.2)[1],border=NA)
+lines(density(log(glob_loss*2794+1)),col=plasma(3)[2],lwd=1.5)
+polygon(density(log(glob_loss*2794+1)),col=plasma(3,alpha=0.2)[2],border=NA)
+legend(0,0.8,c('with corals','without corals'),col=plasma(3)[1:2],pch=15)
+dev.off()
+
+
+
+     
+
